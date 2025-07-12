@@ -1,4 +1,3 @@
-```python
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -17,7 +16,8 @@ from aiohttp import web
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-TOKEN = os.environ.get("7989938055:AAHk9IN-raJtqB8pvCoIDFduQnK42JLYhE4")
+# Токен и настройки
+TOKEN = os.environ.get("BOT_TOKEN", "7989938055:AAHk9IN-raJtqB8pvCoIDFduQnK42JLYhE4")
 ALLOWED_USER_ID = 6710064443
 last_command_time = 0
 COOLDOWN = 2
@@ -222,14 +222,20 @@ async def handle_unknown(message: types.Message):
     
     await message.answer(random.choice(STUPID_RESPONSES))
 
-async def on_startup(_):
-    webhook_url = os.environ.get("WEBHOOK_URL", f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}/webhook")
-    await bot.set_webhook(url=webhook_url)
-    logger.info(f"Вебхук установлен: {webhook_url}")
+async def on_startup(dispatcher):
+    webhook_url = os.environ.get("WEBHOOK_URL", f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME', 'localhost')}/webhook")
+    try:
+        await bot.set_webhook(url=webhook_url)
+        logger.info(f"Вебхук установлен: {webhook_url}")
+    except Exception as e:
+        logger.error(f"Ошибка установки вебхука: {e}")
 
-async def on_shutdown(_):
-    await bot.delete_webhook()
-    logger.info("Вебхук удалён")
+async def on_shutdown(dispatcher):
+    try:
+        await bot.delete_webhook()
+        logger.info("Вебхук удалён")
+    except Exception as e:
+        logger.error(f"Ошибка удаления вебхука: {e}")
 
 def main():
     app = web.Application()
@@ -238,9 +244,10 @@ def main():
     setup_application(app, dp, bot=bot)
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
-    web.run_app(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8443)))
+    port = int(os.environ.get("PORT", 8443))
+    logger.info(f"Запуск сервера на порту {port}...")
+    web.run_app(app, host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
     logger.info("🟢 Запуск бота в режиме вебхуков...")
     main()
-```
